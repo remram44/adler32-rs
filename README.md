@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/remram44/adler32-rs.svg?branch=master)](https://travis-ci.org/remram44/adler32-rs/builds)
+[![Build Status](https://travis-ci.org/remram44/adler32-rs.svg?branch=master)](https://travis-ci.org/remram44/adler32-rs/builds) [![Crates.io](https://img.shields.io/crates/v/adler32.svg)](https://crates.io/crates/adler32)
 
 What is this?
 =============
