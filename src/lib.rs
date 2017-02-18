@@ -182,6 +182,109 @@ impl RollingAdler32 {
     }
 }
 
+pub struct FixedSizeAdler32 {
+    adler32: RollingAdler32,
+    buffer: Box<[u8]>,
+    position: usize,
+    size: usize,
+}
+
+impl FixedSizeAdler32 {
+    /// Creates an empty Adler32 context with a buffer of the given size.
+    pub fn new(size: usize) -> FixedSizeAdler32 {
+        Self::from_value(size, 1)
+    }
+
+    /// Creates an empty Adler32 context with the given size and value.
+    pub fn from_value(size: usize, adler32: u32) -> FixedSizeAdler32 {
+        FixedSizeAdler32 {
+            adler32: RollingAdler32::from_value(adler32),
+            buffer: vec![0; size].into_boxed_slice(),
+            position: 0,
+            size: 0,
+        }
+    }
+
+    /// Creates an Adler32 context with an explicit buffer.
+    pub fn with_buffer(adler32: u32, buffer: Box<[u8]>,
+                       position: usize) -> FixedSizeAdler32 {
+        FixedSizeAdler32 {
+            adler32: RollingAdler32::from_value(adler32),
+            buffer: buffer,
+            position: position,
+            size: position,
+        }
+    }
+
+    pub fn hash(&self) -> u32 {
+        self.adler32.hash()
+    }
+}
+
+impl io::Write for FixedSizeAdler32 {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        // Keep total size, which will be returned
+        let total_size = buf.len();
+        let buffer_size = self.buffer.len();
+
+        // Truncate the given array to the size of our internal buffer
+        let size = if total_size > buffer_size {
+            buffer_size
+        } else {
+            total_size
+        };
+        let buf = &buf[(total_size - size)..];
+        println!("size = {}", size);
+
+        // Remove old bytes
+        let start = buffer_size + self.position - self.size;
+        let remove = if self.size + size > buffer_size {
+            self.size + size - buffer_size
+        } else {
+            0
+        };
+        println!("remove = {}", remove);
+        for i in 0..remove {
+            println!("Removing [{}] = '{}' ({})", (start + i) % buffer_size,
+                     self.buffer[(start + i) % buffer_size] as char,
+                     self.size - i);
+            self.adler32.remove(
+                self.size - i,
+                self.buffer[(start + i) % buffer_size]);
+        }
+        self.size -= remove;
+
+        // Add new bytes
+        println!("Adding \"{}\"", std::str::from_utf8(buf).unwrap());
+        self.adler32.update_buffer(buf);
+        self.size += size;
+        if self.position + size > buffer_size {
+            self.buffer[self.position..]
+                .clone_from_slice(
+                    &buf[..(buffer_size - self.position)]);
+            self.buffer[..(size + self.position - buffer_size)]
+                .clone_from_slice(
+                    &buf[(buffer_size - self.position)..]);
+        } else {
+            self.buffer[self.position..(self.position + size)]
+                .clone_from_slice(&buf);
+        }
+        self.position = (self.position + size) % buffer_size;
+        println!("buffer = \"{}\"", std::str::from_utf8(&self.buffer).unwrap());
+        println!("position = {}", self.position);
+        println!();
+        Ok(total_size)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+
+    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+        self.write(buf).map(|_| ())
+    }
+}
+
 /// Consume a Read object and returns the Adler32 hash.
 pub fn adler32<R: io::Read>(mut reader: R) -> io::Result<u32> {
     let mut hash = RollingAdler32::new();
