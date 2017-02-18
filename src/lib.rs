@@ -234,7 +234,6 @@ impl io::Write for FixedSizeAdler32 {
             total_size
         };
         let buf = &buf[(total_size - size)..];
-        println!("size = {}", size);
 
         // Remove old bytes
         let start = buffer_size + self.position - self.size;
@@ -243,11 +242,7 @@ impl io::Write for FixedSizeAdler32 {
         } else {
             0
         };
-        println!("remove = {}", remove);
         for i in 0..remove {
-            println!("Removing [{}] = '{}' ({})", (start + i) % buffer_size,
-                     self.buffer[(start + i) % buffer_size] as char,
-                     self.size - i);
             self.adler32.remove(
                 self.size - i,
                 self.buffer[(start + i) % buffer_size]);
@@ -255,7 +250,6 @@ impl io::Write for FixedSizeAdler32 {
         self.size -= remove;
 
         // Add new bytes
-        println!("Adding \"{}\"", std::str::from_utf8(buf).unwrap());
         self.adler32.update_buffer(buf);
         self.size += size;
         if self.position + size > buffer_size {
@@ -270,9 +264,6 @@ impl io::Write for FixedSizeAdler32 {
                 .clone_from_slice(&buf);
         }
         self.position = (self.position + size) % buffer_size;
-        println!("buffer = \"{}\"", std::str::from_utf8(&self.buffer).unwrap());
-        println!("position = {}", self.position);
-        println!();
         Ok(total_size)
     }
 
