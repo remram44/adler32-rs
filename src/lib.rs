@@ -302,8 +302,9 @@ mod test {
     use rand;
     use rand::Rng;
     use std::io;
+    use std::io::Write;
 
-    use super::{BASE, adler32, RollingAdler32};
+    use super::{BASE, adler32, RollingAdler32, FixedSizeAdler32};
 
     fn adler32_slow<R: io::Read>(reader: R) -> io::Result<u32> {
         let mut a: u32 = 1;
@@ -375,5 +376,18 @@ mod test {
         do_test(b"", b"this a test");
         do_test(b"th", b"is a test");
         do_test(b"this a ", b"test");
+    }
+
+    #[test]
+    fn fixed_size() {
+        let mut rolling = FixedSizeAdler32::new(4);
+        rolling.write(b"12").unwrap();
+        assert_eq!(rolling.hash(), adler32(b"12" as &[u8]).unwrap());
+        rolling.write(b"3").unwrap();
+        assert_eq!(rolling.hash(), adler32(b"123" as &[u8]).unwrap());
+        rolling.write(b"45").unwrap();
+        assert_eq!(rolling.hash(), adler32(b"2345" as &[u8]).unwrap());
+        rolling.write(b"67890123").unwrap();
+        assert_eq!(rolling.hash(), adler32(b"0123" as &[u8]).unwrap());
     }
 }
