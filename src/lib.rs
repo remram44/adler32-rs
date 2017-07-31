@@ -118,7 +118,9 @@ impl RollingAdler32 {
     pub fn remove(&mut self, size: usize, byte: u8) {
         let byte = byte as u32;
         self.a = (self.a + BASE - byte) % BASE;
-        self.b = (self.b + BASE - 1 + (BASE - size as u32) * byte) % BASE;
+        self.b = ((self.b + BASE - 1)
+                      .wrapping_add(BASE.wrapping_sub(size as u32)
+                                        .wrapping_mul(byte))) % BASE;
     }
 
     /// Feeds a new `byte` to the algorithm to update the hash.
@@ -272,5 +274,28 @@ mod test {
         do_test(b"", b"this a test");
         do_test(b"th", b"is a test");
         do_test(b"this a ", b"test");
+    }
+
+    #[test]
+    fn long_window_remove() {
+        let mut hash = RollingAdler32::new();
+        let w = 65536;
+        assert!(w as u32 > BASE);
+
+        let mut bytes = vec![0; w*3];
+        for (i, b) in bytes.iter_mut().enumerate() {
+            *b = i as u8;
+        }
+
+        for (i, b) in bytes.iter().enumerate() {
+            if i >= w {
+                hash.remove(w, bytes[i - w]);
+            }
+            hash.update(*b);
+            if i > 0 && i % w == 0 {
+                assert_eq!(hash.hash(), 0x433a8772);
+            }
+        }
+        assert_eq!(hash.hash(), 0xbbba8772);
     }
 }
