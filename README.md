@@ -8,4 +8,6 @@ What is this?
 
 It is an implementation of the [Adler32 rolling hash algorithm](https://en.wikipedia.org/wiki/Adler-32) in the [Rust programming language](https://www.rust-lang.org/).
 
+It is adapted from Jean-Loup Gailly's and Mark Adler's [original implementation in zlib](https://github.com/madler/zlib/blob/2fa463bacfff79181df1a5270fb67cc679a53e71/adler32.c). A copy of the zlib copyright and license can be found in LICENSE-ZLIB.
+
 [Generated documentation](https://remram44.github.io/adler32-rs/index.html)
