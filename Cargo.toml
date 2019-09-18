@@ -7,7 +7,7 @@ documentation = "https://remram44.github.io/adler32-rs/index.html"
 repository = "https://github.com/remram44/adler32-rs"
 readme = "README.md"
 keywords = ["adler32", "hash", "rolling"]
-license = "BSD-3-Clause AND Zlib"
+license = "Zlib"
 
 [dev-dependencies]
 rand = "0.4"
