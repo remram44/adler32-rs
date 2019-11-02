@@ -8,6 +8,8 @@
 //! The adler32 code has been translated (as accurately as I could manage) from
 //! the zlib implementation.
 
+#![forbid(unsafe_code)]
+
 #[cfg(test)]
 extern crate rand;
 
