@@ -2,7 +2,7 @@
 [![Win Build](https://ci.appveyor.com/api/projects/status/ekyg20rd6rwrus64/branch/master?svg=true)](https://ci.appveyor.com/project/remram44/adler32-rs)
 [![Crates.io](https://img.shields.io/crates/v/adler32.svg)](https://crates.io/crates/adler32)
 [![Documentation](https://docs.rs/adler32/badge.svg)](https://docs.rs/adler32)
-[![License](https://img.shields.io/crates/l/adler32.svg)](hhttps://github.com/remram44/adler32-rs/blob/master/LICENSE)
+[![License](https://img.shields.io/crates/l/adler32.svg)](https://github.com/remram44/adler32-rs/blob/master/LICENSE)
 [![Say Thanks!](https://img.shields.io/badge/Say%20Thanks-!-1EAEDB.svg)](https://saythanks.io/to/remram44)
 
 What is this?
