@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/remram44/adler32-rs.svg?branch=master)](https://travis-ci.org/remram44/adler32-rs/builds)
+![Build Status](https://github.com/remram44/adler32-rs/workflows/Test/badge.svg)
 [![Win Build](https://ci.appveyor.com/api/projects/status/ekyg20rd6rwrus64/branch/master?svg=true)](https://ci.appveyor.com/project/remram44/adler32-rs)
 [![Crates.io](https://img.shields.io/crates/v/adler32.svg)](https://crates.io/crates/adler32)
 [![Documentation](https://docs.rs/adler32/badge.svg)](https://docs.rs/adler32)
