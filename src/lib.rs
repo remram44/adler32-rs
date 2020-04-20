@@ -156,25 +156,25 @@ impl RollingAdler32 {
         let block_range = len / 16 * 16;
         
         for block in buffer[..block_range].chunks(NMAX) {
-            let mut adler = RollingAdler32::new();
             // block size is a multiple of 16
             for sixteen in block.chunks(16) {
-                do16(&mut adler.a, &mut adler.b, &sixteen);
+                do16(&mut self.a, &mut self.b, &sixteen);
             }
-            adler.a %= BASE;
-            adler.b %= BASE;
-            self.combine(&adler, block.len());
+            self.a %= BASE;
+            self.b %= BASE;
         };
         
         // process the remaining < 16 bytes
-        for byte in buffer[block_range..].iter() {
-            self.a += u32::from(*byte);
-            self.b += self.a;
+        if block_range < len {
+            for byte in buffer[block_range..].iter() {
+                self.a += u32::from(*byte);
+                self.b += self.a;
+            }
+            if self.a >= BASE {
+                self.a -= BASE;
+            }
+            self.b %= BASE;
         }
-        if self.a >= BASE {
-            self.a -= BASE;
-        }
-        self.b %= BASE;
     }
     
     // Combines two hashes.
