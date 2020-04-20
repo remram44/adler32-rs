@@ -140,6 +140,10 @@ impl RollingAdler32 {
 
     /// Feeds a vector of bytes to the algorithm to update the hash.
     pub fn update_buffer(&mut self, buffer: &[u8]) {
+        
+        // We rely on NMAX being a multiple of 16
+        assert_eq!(NMAX % 16, 0);
+
         let len = buffer.len();
 
         // in case user likes doing a byte at a time, keep it fast
@@ -147,50 +151,53 @@ impl RollingAdler32 {
             self.update(buffer[0]);
             return;
         }
-
-        // in case short lengths are provided, keep it somewhat fast
-        if len < 16 {
-            for byte in buffer.iter().take(len) {
-                self.a += u32::from(*byte);
-                self.b += self.a;
+        
+        // process the buffer up until the last 16-byte boundary
+        let block_range = len / 16 * 16;
+        
+        for block in buffer[..block_range].chunks(NMAX) {
+            let mut adler = RollingAdler32::new();
+            // block size is a multiple of 16
+            for sixteen in block.chunks(16) {
+                do16(&mut adler.a, &mut adler.b, &sixteen);
             }
-            if self.a >= BASE {
-                self.a -= BASE;
-            }
-            self.b %= BASE;
-            return;
+            adler.a %= BASE;
+            adler.b %= BASE;
+            self.combine(&adler, block.len());
+        };
+        
+        // process the remaining < 16 bytes
+        for byte in buffer[block_range..].iter() {
+            self.a += u32::from(*byte);
+            self.b += self.a;
         }
-
-        let mut pos = 0;
-
-        // do length NMAX blocks -- requires just one modulo operation;
-        while pos + NMAX <= len {
-            let end = pos + NMAX;
-            while pos < end {
-                // 16 sums unrolled
-                do16(&mut self.a, &mut self.b, &buffer[pos..pos + 16]);
-                pos += 16;
-            }
-            self.a %= BASE;
-            self.b %= BASE;
+        if self.a >= BASE {
+            self.a -= BASE;
         }
-
-        // do remaining bytes (less than NMAX, still just one modulo)
-        if pos < len { // avoid modulos if none remaining
-            while len - pos >= 16 {
-                do16(&mut self.a, &mut self.b, &buffer[pos..pos + 16]);
-                pos += 16;
-            }
-            while len - pos > 0 {
-                self.a += u32::from(buffer[pos]);
-                self.b += self.a;
-                pos += 1;
-            }
-            self.a %= BASE;
-            self.b %= BASE;
+        self.b %= BASE;
+    }
+    
+    // Combines two hashes.
+    pub fn combine(&mut self, adler2: &RollingAdler32, len2: usize) {
+        /* the derivation of this formula is left as an exercise for the reader */
+        let len32 = len2 as u32 % BASE;
+        self.b += len32 * self.a % BASE + adler2.b + BASE - len32;
+        self.a += adler2.a + BASE - 1;
+        if self.a >= BASE {
+            self.a -= BASE;
+        }
+        if self.a >= BASE {
+            self.a -= BASE;
+        }
+        if self.b >= BASE << 1 {
+            self.b -= BASE << 1;
+        }
+        if self.b >= BASE {
+            self.b -= BASE;
         }
     }
 }
+
 
 /// Consume a Read object and returns the Adler32 hash.
 pub fn adler32<R: io::Read>(mut reader: R) -> io::Result<u32> {
@@ -261,6 +268,21 @@ mod test {
                 panic!("Comparison failed, size={}", size);
             }
         }
+    }
+    
+    #[test]
+    // TODO: add more test cases for combine()
+    fn combine() {
+        let mut rng = rand::thread_rng();
+        let mut data = vec![0u8; 2000];
+        rng.fill_bytes(&mut data);
+        let r = io::Cursor::new(&data);
+        let mut a1 = RollingAdler32::new();
+        let mut a2 = RollingAdler32::new();
+        a1.update_buffer(&data[..1000]);
+        a2.update_buffer(&data[1000..]);
+        a1.combine(&a2, 1000);
+        assert_eq!(adler32_slow(r).unwrap(), a1.hash());
     }
 
     #[test]
