@@ -100,7 +100,7 @@ impl Default for RollingAdler32 {
 impl RollingAdler32 {
     /// Creates an empty Adler32 context (with hash 1).
     pub fn new() -> RollingAdler32 {
-        Self::from_value(1)
+        RollingAdler32 { a: 1, b: 0 }
     }
 
     /// Creates an Adler32 context with the given initial value.
@@ -152,10 +152,10 @@ impl RollingAdler32 {
             return;
         }
         
-        // process the buffer up until the last 16-byte boundary
-        let block_range = len / 16 * 16;
+        let nmax_chunks = buffer.chunks_exact(NMAX);
+        let nmax_remainder = nmax_chunks.remainder();
         
-        for block in buffer[..block_range].chunks(NMAX) {
+        for block in nmax_chunks {
             // block size is a multiple of 16
             for sixteen in block.chunks(16) {
                 do16(&mut self.a, &mut self.b, &sixteen);
@@ -164,17 +164,20 @@ impl RollingAdler32 {
             self.b %= BASE;
         };
         
-        // process the remaining < 16 bytes
-        if block_range < len {
-            for byte in buffer[block_range..].iter() {
-                self.a += u32::from(*byte);
-                self.b += self.a;
-            }
-            if self.a >= BASE {
-                self.a -= BASE;
-            }
-            self.b %= BASE;
+        let sixteen_chunks = nmax_remainder.chunks_exact(16);
+        let sixteen_remainder = sixteen_chunks.remainder();
+        for sixteen in sixteen_chunks {
+            do16(&mut self.a, &mut self.b, &sixteen);
         }
+        
+        // process the remaining < 16 bytes
+        for byte in sixteen_remainder {
+            self.a += u32::from(*byte);
+            self.b += self.a;
+        }
+        
+        self.a %= BASE;
+        self.b %= BASE;
     }
     
     // Combines two hashes.
