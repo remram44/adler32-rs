@@ -18,14 +18,34 @@ fn bench(b: &mut Bencher, size: usize, adler: &mut RollingAdler32) {
     b.bytes = size as u64;
 }
 
+fn bench_1b(b: &mut Bencher) {
+    bench(b, 1, &mut RollingAdler32::new())
+}
+
+fn bench_15b(b: &mut Bencher) {
+    bench(b, 15, &mut RollingAdler32::new())
+}
+
+fn bench_1023b(b: &mut Bencher) {
+    bench(b, 1023, &mut RollingAdler32::new())
+}
+
 fn bench_512b(b: &mut Bencher) {
     bench(b, 512, &mut RollingAdler32::new())
+}
+
+fn bench_4kib(b: &mut Bencher) {
+    bench(b, 4096, &mut RollingAdler32::new())
 }
 
 fn bench_100kib(b: &mut Bencher) {
     bench(b, 1024 * 100, &mut RollingAdler32::new())
 }
 
-benchmark_group!(bench_default, bench_512b, bench_100kib);
+fn bench_150k(b: &mut Bencher) {
+    bench(b, 150_000, &mut RollingAdler32::new())
+}
+
+benchmark_group!(bench_default, bench_1b, bench_15b, bench_512b, bench_4kib, bench_100kib, bench_1023b, bench_150k);
 
 benchmark_main!(bench_default);

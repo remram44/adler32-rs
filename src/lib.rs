@@ -48,7 +48,7 @@ use std::io;
 // largest prime smaller than 65536
 const BASE: u32 = 65521;
 
-// NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
+/// NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
 const NMAX: usize = 5552;
 
 fn do1(adler: &mut RollingAdler32, buf: &[u8]) {
@@ -152,32 +152,44 @@ impl RollingAdler32 {
         let nmax_remainder = nmax_chunks.remainder();
         
         for block in nmax_chunks {
+            let mut block_hash = RollingAdler32::new();
             // block size is a multiple of 16
             for sixteen in block.chunks(16) {
-                do16(self, &sixteen);
+                do16(&mut block_hash, &sixteen);
             }
-            self.a %= BASE;
-            self.b %= BASE;
-        };
-        
-        let sixteen_chunks = nmax_remainder.chunks_exact(16);
-        let sixteen_remainder = sixteen_chunks.remainder();
-        
-        for sixteen in sixteen_chunks {
-            do16(self, &sixteen);
+            block_hash.a %= BASE;
+            block_hash.b %= BASE;
+            self.combine(block_hash, NMAX);
         }
         
-        // process the remaining < 16 bytes
-        for byte in sixteen_remainder {
-            self.a += u32::from(*byte);
-            self.b += self.a;
+        let remaining_len = nmax_remainder.len();
+        
+        if remaining_len > 0 {
+            
+            let sixteen_chunks = nmax_remainder.chunks_exact(16);
+            let sixteen_remainder = sixteen_chunks.remainder();
+            
+            let mut block_hash = RollingAdler32::new();
+            
+            for sixteen in sixteen_chunks {
+                do16(&mut block_hash, &sixteen);
+            }
+            
+            // process the remaining < 16 bytes
+            for byte in sixteen_remainder {
+                block_hash.a += u32::from(*byte);
+                block_hash.b += block_hash.a;
+            }
+            
+            block_hash.a %= BASE;
+            block_hash.b %= BASE;
+            
+            self.combine(block_hash, remaining_len);
         }
         
-        self.a %= BASE;
-        self.b %= BASE;
     }
     
-    // Combines two hashes.
+    /// Combines two hashes.
     pub fn combine(&mut self, adler2: RollingAdler32, len2: usize) {
         /* the derivation of this formula is left as an exercise for the reader */
         let len32 = len2 as u32 % BASE;
@@ -197,7 +209,6 @@ impl RollingAdler32 {
         }
     }
 }
-
 
 /// Consume a Read object and returns the Adler32 hash.
 pub fn adler32<R: io::Read>(mut reader: R) -> io::Result<u32> {
