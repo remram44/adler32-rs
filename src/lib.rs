@@ -14,6 +14,7 @@
 extern crate rand;
 
 use std::io;
+use std::slice::ChunksExact;
 
 // adler32 algorithm and implementation taken from zlib; http://www.zlib.net/
 // It was translated into Rust as accurately as I could manage
@@ -51,29 +52,11 @@ const BASE: u32 = 65521;
 /// NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
 const NMAX: usize = 5552;
 
-fn do1(adler: &mut RollingAdler32, buf: &[u8]) {
-    adler.a += u32::from(buf[0]);
-    adler.b += adler.a;
-}
-
-fn do2(adler: &mut RollingAdler32, buf: &[u8]) {
-    do1(adler, &buf[0..1]);
-    do1(adler, &buf[1..2]);
-}
-
-fn do4(adler: &mut RollingAdler32, buf: &[u8]) {
-    do2(adler, &buf[0..2]);
-    do2(adler, &buf[2..4]);
-}
-
-fn do8(adler: &mut RollingAdler32, buf: &[u8]) {
-    do4(adler, &buf[0..4]);
-    do4(adler, &buf[4..8]);
-}
-
 fn do16(adler: &mut RollingAdler32, buf: &[u8]) {
-    do8(adler, &buf[0..8]);
-    do8(adler, &buf[8..16]);
+    for byte in buf.iter().take(16) {
+        adler.a += u32::from(*byte);
+        adler.b += adler.a;
+    }
 }
 
 /// A rolling version of the Adler32 hash, which can 'forget' past bytes.
