@@ -51,29 +51,29 @@ const BASE: u32 = 65521;
 // NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
 const NMAX: usize = 5552;
 
-fn do1(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
-    *adler += u32::from(buf[0]);
-    *sum2 += *adler;
+fn do1(adler: &mut RollingAdler32, buf: &[u8]) {
+    adler.a += u32::from(buf[0]);
+    adler.b += adler.a;
 }
 
-fn do2(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
-    do1(adler, sum2, &buf[0..1]);
-    do1(adler, sum2, &buf[1..2]);
+fn do2(adler: &mut RollingAdler32, buf: &[u8]) {
+    do1(adler, &buf[0..1]);
+    do1(adler, &buf[1..2]);
 }
 
-fn do4(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
-    do2(adler, sum2, &buf[0..2]);
-    do2(adler, sum2, &buf[2..4]);
+fn do4(adler: &mut RollingAdler32, buf: &[u8]) {
+    do2(adler, &buf[0..2]);
+    do2(adler, &buf[2..4]);
 }
 
-fn do8(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
-    do4(adler, sum2, &buf[0..4]);
-    do4(adler, sum2, &buf[4..8]);
+fn do8(adler: &mut RollingAdler32, buf: &[u8]) {
+    do4(adler, &buf[0..4]);
+    do4(adler, &buf[4..8]);
 }
 
-fn do16(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
-    do8(adler, sum2, &buf[0..8]);
-    do8(adler, sum2, &buf[8..16]);
+fn do16(adler: &mut RollingAdler32, buf: &[u8]) {
+    do8(adler, &buf[0..8]);
+    do8(adler, &buf[8..16]);
 }
 
 /// A rolling version of the Adler32 hash, which can 'forget' past bytes.
@@ -154,7 +154,7 @@ impl RollingAdler32 {
         for block in nmax_chunks {
             // block size is a multiple of 16
             for sixteen in block.chunks(16) {
-                do16(&mut self.a, &mut self.b, &sixteen);
+                do16(self, &sixteen);
             }
             self.a %= BASE;
             self.b %= BASE;
@@ -162,8 +162,9 @@ impl RollingAdler32 {
         
         let sixteen_chunks = nmax_remainder.chunks_exact(16);
         let sixteen_remainder = sixteen_chunks.remainder();
+        
         for sixteen in sixteen_chunks {
-            do16(&mut self.a, &mut self.b, &sixteen);
+            do16(self, &sixteen);
         }
         
         // process the remaining < 16 bytes
