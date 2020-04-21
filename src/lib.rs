@@ -51,6 +51,31 @@ const BASE: u32 = 65521;
 /// NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
 const NMAX: usize = 5552;
 
+fn do1(adler: &mut RollingAdler32, buf: &[u8]) {
+    adler.a += buf[0] as u32;
+    adler.b += adler.a;
+}
+
+fn do2(adler: &mut RollingAdler32, buf: &[u8]) {
+    do1(adler, &buf[0..1]);
+    do1(adler, &buf[1..2]);
+}
+
+fn do4(adler: &mut RollingAdler32, buf: &[u8]) {
+    do2(adler, &buf[0..2]);
+    do2(adler, &buf[2..4]);
+}
+
+fn do8(adler: &mut RollingAdler32, buf: &[u8]) {
+    do4(adler, &buf[0..4]);
+    do4(adler, &buf[4..8]);
+}
+
+fn do16(adler: &mut RollingAdler32, buf: &[u8]) {
+    do8(adler, &buf[0..8]);
+    do8(adler, &buf[8..16]);
+}
+
 /// A rolling version of the Adler32 hash, which can 'forget' past bytes.
 ///
 /// Calling remove() will update the hash to the value it would have if that
@@ -101,14 +126,6 @@ impl RollingAdler32 {
                       .wrapping_add(BASE.wrapping_sub(size as u32)
                                         .wrapping_mul(byte))) % BASE;
     }
-    
-    /// Internal method for processing 16 bytes
-    fn do16(&mut self, buf: &[u8]) {
-        for byte in buf.iter().take(16) {
-            self.a += u32::from(*byte);
-            self.b += self.a;
-        }
-    }
 
     /// Feeds a new `byte` to the algorithm to update the hash.
     pub fn update(&mut self, byte: u8) {
@@ -151,7 +168,7 @@ impl RollingAdler32 {
             let mut block_hash = RollingAdler32::new();
             // block size is a multiple of 16
             for sixteen in block.chunks(16) {
-                block_hash.do16(&sixteen);
+                do16(&mut block_hash, &sixteen);
             }
             block_hash.a %= BASE;
             block_hash.b %= BASE;
@@ -168,7 +185,7 @@ impl RollingAdler32 {
             let mut block_hash = RollingAdler32::new();
             
             for sixteen in sixteen_chunks {
-                block_hash.do16(&sixteen);
+                do16(&mut block_hash, &sixteen);
             }
             
             // process the remaining < 16 bytes
