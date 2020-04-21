@@ -51,31 +51,26 @@ const BASE: u32 = 65521;
 // NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
 const NMAX: usize = 5552;
 
-#[inline(always)]
 fn do1(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
     *adler += u32::from(buf[0]);
     *sum2 += *adler;
 }
 
-#[inline(always)]
 fn do2(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
     do1(adler, sum2, &buf[0..1]);
     do1(adler, sum2, &buf[1..2]);
 }
 
-#[inline(always)]
 fn do4(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
     do2(adler, sum2, &buf[0..2]);
     do2(adler, sum2, &buf[2..4]);
 }
 
-#[inline(always)]
 fn do8(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
     do4(adler, sum2, &buf[0..4]);
     do4(adler, sum2, &buf[4..8]);
 }
 
-#[inline(always)]
 fn do16(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
     do8(adler, sum2, &buf[0..8]);
     do8(adler, sum2, &buf[8..16]);
@@ -86,6 +81,7 @@ fn do16(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
 /// Calling remove() will update the hash to the value it would have if that
 /// past byte had never been fed to the algorithm. This allows you to get the
 /// hash of a rolling window very efficiently.
+#[derive(Clone, Copy)]
 pub struct RollingAdler32 {
     a: u32,
     b: u32,
