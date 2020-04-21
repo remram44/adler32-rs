@@ -52,13 +52,6 @@ const BASE: u32 = 65521;
 /// NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
 const NMAX: usize = 5552;
 
-fn do16(adler: &mut RollingAdler32, buf: &[u8]) {
-    for byte in buf.iter().take(16) {
-        adler.a += u32::from(*byte);
-        adler.b += adler.a;
-    }
-}
-
 /// A rolling version of the Adler32 hash, which can 'forget' past bytes.
 ///
 /// Calling remove() will update the hash to the value it would have if that
@@ -109,6 +102,14 @@ impl RollingAdler32 {
                       .wrapping_add(BASE.wrapping_sub(size as u32)
                                         .wrapping_mul(byte))) % BASE;
     }
+    
+    /// Internal method for processing 16 bytes
+    fn do16(&mut self, buf: &[u8]) {
+        for byte in buf.iter().take(16) {
+            self.a += u32::from(*byte);
+            self.b += self.a;
+        }
+    }
 
     /// Feeds a new `byte` to the algorithm to update the hash.
     pub fn update(&mut self, byte: u8) {
@@ -151,7 +152,7 @@ impl RollingAdler32 {
             let mut block_hash = RollingAdler32::new();
             // block size is a multiple of 16
             for sixteen in block.chunks(16) {
-                do16(&mut block_hash, &sixteen);
+                block_hash.do16(&sixteen);
             }
             block_hash.a %= BASE;
             block_hash.b %= BASE;
@@ -168,7 +169,7 @@ impl RollingAdler32 {
             let mut block_hash = RollingAdler32::new();
             
             for sixteen in sixteen_chunks {
-                do16(&mut block_hash, &sixteen);
+                block_hash.do16(&sixteen);
             }
             
             // process the remaining < 16 bytes
