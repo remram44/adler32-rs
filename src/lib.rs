@@ -114,7 +114,7 @@ impl RollingAdler32 {
     }
 
     /// Returns the current hash.
-    pub fn hash(&self) -> u32 {
+    pub fn hash(self) -> u32 {
         (self.b << 16) | self.a
     }
 
@@ -177,7 +177,7 @@ impl RollingAdler32 {
     }
     
     // Combines two hashes.
-    pub fn combine(&mut self, adler2: &RollingAdler32, len2: usize) {
+    pub fn combine(&mut self, adler2: RollingAdler32, len2: usize) {
         /* the derivation of this formula is left as an exercise for the reader */
         let len32 = len2 as u32 % BASE;
         self.b += len32 * self.a % BASE + adler2.b + BASE - len32;
@@ -280,7 +280,7 @@ mod test {
         let mut a2 = RollingAdler32::new();
         a1.update_buffer(&data[..1000]);
         a2.update_buffer(&data[1000..]);
-        a1.combine(&a2, 1000);
+        a1.combine(a2, 1000);
         assert_eq!(adler32_slow(r).unwrap(), a1.hash());
     }
 
