@@ -148,6 +148,19 @@ impl RollingAdler32 {
             return;
         }
         
+        // in case short lengths are provided, keep it somewhat fast
+        if len < 16 {
+            for byte in buffer.iter() {
+                self.a += u32::from(*byte);
+                self.b += self.a;
+            }
+            if self.a >= BASE {
+                self.a -= BASE;
+            }
+            self.b %= BASE;
+            return;
+        }        
+        
         let nmax_chunks = buffer.chunks_exact(NMAX);
         let nmax_remainder = nmax_chunks.remainder();
         
@@ -193,20 +206,8 @@ impl RollingAdler32 {
     pub fn combine(&mut self, adler2: RollingAdler32, len2: usize) {
         /* the derivation of this formula is left as an exercise for the reader */
         let len32 = len2 as u32 % BASE;
-        self.b += len32 * self.a % BASE + adler2.b + BASE - len32;
-        self.a += adler2.a + BASE - 1;
-        if self.a >= BASE {
-            self.a -= BASE;
-        }
-        if self.a >= BASE {
-            self.a -= BASE;
-        }
-        if self.b >= BASE << 1 {
-            self.b -= BASE << 1;
-        }
-        if self.b >= BASE {
-            self.b -= BASE;
-        }
+        self.b = (self.b + len32 * self.a % BASE + adler2.b + BASE - len32) % BASE;
+        self.a = (self.a + adler2.a + BASE - 1) % BASE;
     }
 }
 
