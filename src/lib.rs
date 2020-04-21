@@ -14,7 +14,6 @@
 extern crate rand;
 
 use std::io;
-use std::slice::ChunksExact;
 
 // adler32 algorithm and implementation taken from zlib; http://www.zlib.net/
 // It was translated into Rust as accurately as I could manage
