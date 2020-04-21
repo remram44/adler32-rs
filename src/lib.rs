@@ -138,7 +138,7 @@ impl RollingAdler32 {
     pub fn update_buffer(&mut self, buffer: &[u8]) {
         
         // We rely on NMAX being a multiple of 16
-        assert_eq!(NMAX % 16, 0);
+        debug_assert_eq!(NMAX % 16, 0);
 
         let len = buffer.len();
 
@@ -282,18 +282,21 @@ mod test {
     }
     
     #[test]
-    // TODO: add more test cases for combine()
     fn combine() {
         let mut rng = rand::thread_rng();
-        let mut data = vec![0u8; 2000];
-        rng.fill_bytes(&mut data);
-        let r = io::Cursor::new(&data);
-        let mut a1 = RollingAdler32::new();
-        let mut a2 = RollingAdler32::new();
-        a1.update_buffer(&data[..1000]);
-        a2.update_buffer(&data[1000..]);
-        a1.combine(a2, 1000);
-        assert_eq!(adler32_slow(r).unwrap(), a1.hash());
+        let mut data = vec![0u8; 5589];
+        for size in [0, 1, 3, 4, 5, 31, 32, 33, 67,
+                     5550, 5552, 5553, 5568, 5584, 5589].iter().cloned() {
+            rng.fill_bytes(&mut data[..size]);
+            let r = io::Cursor::new(&data[..size]);
+            let half = size / 2;
+            let mut c1 = RollingAdler32::new();
+            c1.update_buffer(&data[..half]);
+            let mut c2 = RollingAdler32::new();
+            c2.update_buffer(&data[half..size]);
+            c1.combine(c2, size - half);
+            assert_eq!(adler32_slow(r).unwrap(), c1.hash());
+        }
     }
 
     #[test]
