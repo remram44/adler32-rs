@@ -51,26 +51,26 @@ const BASE: u32 = 65521;
 /// NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
 const NMAX: usize = 5552;
 
-fn do1(adler: &mut RollingAdler32, buf: &[u8]) {
-    adler.a += buf[0] as u32;
-    adler.b += adler.a;
-}
-
-fn do2(adler: &mut RollingAdler32, buf: &[u8]) {
-    do1(adler, &buf[0..1]);
-    do1(adler, &buf[1..2]);
-}
-
+#[inline(always)]
 fn do4(adler: &mut RollingAdler32, buf: &[u8]) {
-    do2(adler, &buf[0..2]);
-    do2(adler, &buf[2..4]);
+    let b0 = u16::from(buf[0]);
+    let b1 = u16::from(buf[1]);
+    let b2 = u16::from(buf[2]);
+    let b3 = u16::from(buf[3]);
+    adler.b += (adler.a << 2) + u32::from(
+        (((b0 << 1) + b2) << 1) +
+        (b1 + (b1 << 1) + b3)
+    );
+    adler.a += u32::from(b0 + b1 + b2 + b3);
 }
 
+#[inline(always)]
 fn do8(adler: &mut RollingAdler32, buf: &[u8]) {
     do4(adler, &buf[0..4]);
     do4(adler, &buf[4..8]);
 }
 
+#[inline(always)]
 fn do16(adler: &mut RollingAdler32, buf: &[u8]) {
     do8(adler, &buf[0..8]);
     do8(adler, &buf[8..16]);
@@ -141,63 +141,36 @@ impl RollingAdler32 {
         debug_assert_eq!(NMAX % 16, 0);
 
         let len = buffer.len();
-
-        // in case user likes doing a byte at a time, keep it fast
-        if len == 1 {
-            self.update(buffer[0]);
-            return;
-        }
         
-        // in case short lengths are provided, keep it somewhat fast
-        if len < 16 {
-            for byte in buffer.iter() {
+        let remainder = len % 16;
+        
+        if remainder > 0 {
+            let four_rem = remainder % 4;
+            for byte in buffer[..four_rem].iter() {
                 self.a += u32::from(*byte);
                 self.b += self.a;
+            }
+            for four in buffer[four_rem..remainder].chunks_exact(4) {
+                do4(self, four);
             }
             if self.a >= BASE {
                 self.a -= BASE;
             }
             self.b %= BASE;
-            return;
-        }        
-        
-        let nmax_chunks = buffer.chunks_exact(NMAX);
-        let nmax_remainder = nmax_chunks.remainder();
-        
-        for block in nmax_chunks {
-            let mut block_hash = RollingAdler32::new();
-            // block size is a multiple of 16
-            for sixteen in block.chunks(16) {
-                do16(&mut block_hash, &sixteen);
+            if len < 16 {
+                return;
             }
-            block_hash.a %= BASE;
-            block_hash.b %= BASE;
-            self.combine(block_hash, NMAX);
         }
         
-        let remaining_len = nmax_remainder.len();
+        let nmax_chunks = buffer[remainder..].chunks(NMAX);
         
-        if remaining_len > 0 {
-            
-            let sixteen_chunks = nmax_remainder.chunks_exact(16);
-            let sixteen_remainder = sixteen_chunks.remainder();
-            
-            let mut block_hash = RollingAdler32::new();
-            
-            for sixteen in sixteen_chunks {
-                do16(&mut block_hash, &sixteen);
+        for block in nmax_chunks {
+            // block size is a multiple of 16
+            for sixteen in block.chunks_exact(16) {
+                do16(self, &sixteen);
             }
-            
-            // process the remaining < 16 bytes
-            for byte in sixteen_remainder {
-                block_hash.a += u32::from(*byte);
-                block_hash.b += block_hash.a;
-            }
-            
-            block_hash.a %= BASE;
-            block_hash.b %= BASE;
-            
-            self.combine(block_hash, remaining_len);
+            self.a %= BASE;
+            self.b %= BASE;
         }
         
     }

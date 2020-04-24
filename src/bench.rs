@@ -26,6 +26,10 @@ fn bench_15b(b: &mut Bencher) {
     bench(b, 15, &mut RollingAdler32::new())
 }
 
+fn bench_7b(b: &mut Bencher) {
+    bench(b, 7, &mut RollingAdler32::new())
+}
+
 fn bench_1023b(b: &mut Bencher) {
     bench(b, 1023, &mut RollingAdler32::new())
 }
@@ -46,6 +50,6 @@ fn bench_150k(b: &mut Bencher) {
     bench(b, 150_000, &mut RollingAdler32::new())
 }
 
-benchmark_group!(bench_default, bench_1b, bench_15b, bench_512b, bench_4kib, bench_100kib, bench_1023b, bench_150k);
+benchmark_group!(bench_default, bench_1b, bench_7b, bench_15b, bench_512b, bench_4kib, bench_100kib, bench_1023b, bench_150k);
 
 benchmark_main!(bench_default);
