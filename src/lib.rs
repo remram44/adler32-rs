@@ -52,21 +52,6 @@ const BASE: u32 = 65521;
 const NMAX: usize = 5552;
 
 #[inline(always)]
-fn do16_loop(adler: &mut RollingAdler32, buf: &[u8]) {
-    debug_assert_eq!(buf.len(), 16);
-    let mut a = 0u16;
-    let mut b = 0u16;
-    for byte in buf.iter() {
-        let n = u16::from(*byte);
-        a += n;
-        b += a;
-    }
-    adler.b += (adler.a << 4) + u32::from(b);
-    adler.a += u32::from(a);
-}
-
-
-#[inline(always)]
 fn do4(adler: &mut RollingAdler32, buf: &[u8]) {
     let b0 = u16::from(buf[0]);
     let b1 = u16::from(buf[1]);
@@ -157,12 +142,6 @@ impl RollingAdler32 {
 
         let len = buffer.len();
         
-        // in case user likes doing a byte at a time, keep it fast
-        if len == 1 {
-            self.update(buffer[0]);
-            return;
-        }
-        
         let remainder = len % 16;
         
         if remainder > 0 {
@@ -183,7 +162,7 @@ impl RollingAdler32 {
         
         for block in nmax_chunks {
             // block size is a multiple of 16
-            for sixteen in block.chunks(16) {
+            for sixteen in block.chunks_exact(16) {
                 do16(self, &sixteen);
             }
             self.a %= BASE;
