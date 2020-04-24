@@ -145,9 +145,13 @@ impl RollingAdler32 {
         let remainder = len % 16;
         
         if remainder > 0 {
-            for byte in buffer[0..remainder].iter() {
+            let four_rem = remainder % 4;
+            for byte in buffer[..four_rem].iter() {
                 self.a += u32::from(*byte);
                 self.b += self.a;
+            }
+            for four in buffer[four_rem..remainder].chunks_exact(4) {
+                do4(self, four);
             }
             if self.a >= BASE {
                 self.a -= BASE;
