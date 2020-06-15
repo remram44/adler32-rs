@@ -9,11 +9,13 @@
 //! the zlib implementation.
 
 #![forbid(unsafe_code)]
+#![no_std]
+
+#[cfg(feature = "std")]
+extern crate std;
 
 #[cfg(test)]
 extern crate rand;
-
-use std::io;
 
 // adler32 algorithm and implementation taken from zlib; http://www.zlib.net/
 // It was translated into Rust as accurately as I could manage
@@ -194,7 +196,8 @@ impl RollingAdler32 {
 }
 
 /// Consume a Read object and returns the Adler32 hash.
-pub fn adler32<R: io::Read>(mut reader: R) -> io::Result<u32> {
+#[cfg(feature = "std")]
+pub fn adler32<R: std::io::Read>(mut reader: R) -> std::io::Result<u32> {
     let mut hash = RollingAdler32::new();
     let mut buffer = [0u8; NMAX];
     let mut read = reader.read(&mut buffer)?;
@@ -209,6 +212,8 @@ pub fn adler32<R: io::Read>(mut reader: R) -> io::Result<u32> {
 mod test {
     use rand::Rng;
     use std::io;
+    use std::prelude::v1::*;
+    use std::vec;
 
     use super::{adler32, RollingAdler32, BASE};
 
