@@ -88,6 +88,7 @@ fn do16(adler: &mut u32, sum2: &mut u32, buf: &[u8]) {
 /// Calling remove() will update the hash to the value it would have if that
 /// past byte had never been fed to the algorithm. This allows you to get the
 /// hash of a rolling window very efficiently.
+#[derive(Clone)]
 pub struct RollingAdler32 {
     a: u32,
     b: u32,
