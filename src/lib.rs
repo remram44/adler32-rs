@@ -263,7 +263,7 @@ mod test {
         .iter()
         .cloned()
         {
-            rng.fill_bytes(&mut data[..size]);
+            rng.fill(&mut data[..size]);
             let r1 = io::Cursor::new(&data[..size]);
             let r2 = r1.clone();
             if adler32_slow(r1).unwrap() != adler32(r2).unwrap() {

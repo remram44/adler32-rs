@@ -27,7 +27,7 @@ rustc-dep-of-std = ['core', 'compiler_builtins']
 [dev-dependencies]
 criterion = "0.3"
 humansize = "1.1"
-rand = "0.4"
+rand = "0.7"
 
 [[bench]]
 path = "src/bench.rs"
