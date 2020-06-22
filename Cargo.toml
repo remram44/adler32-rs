@@ -2,6 +2,7 @@
 name = "adler32"
 version = "1.1.0"
 authors = ["Remi Rampin <remirampin@gmail.com>"]
+edition = "2018"
 description = "Minimal Adler32 implementation for Rust."
 documentation = "https://docs.rs/adler32/"
 repository = "https://github.com/remram44/adler32-rs"
