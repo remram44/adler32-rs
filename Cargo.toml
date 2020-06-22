@@ -25,10 +25,16 @@ std = []
 rustc-dep-of-std = ['core', 'compiler_builtins']
 
 [dev-dependencies]
+criterion = "0.3"
+humansize = "1.1"
 rand = "0.4"
-bencher = "0.1.5"
 
 [[bench]]
 path = "src/bench.rs"
 name = "bench"
 harness = false
+
+[lib]
+# Disable `libtest` so Criterion-only parameters like `--save-baseline` work.
+# See https://bheisler.github.io/criterion.rs/book/faq.html#cargo-bench-gives-unrecognized-option-errors-for-valid-command-line-options
+bench = false
