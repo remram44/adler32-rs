@@ -1,9 +1,4 @@
-#[macro_use]
-extern crate bencher;
-extern crate rand;
-extern crate adler32;
-
-use bencher::Bencher;
+use bencher::{Bencher, benchmark_main, benchmark_group};
 use rand::{thread_rng, Rng};
 use adler32::RollingAdler32;
 
