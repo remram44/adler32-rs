@@ -28,5 +28,6 @@ rand = "0.4"
 bencher = "0.1.5"
 
 [[bench]]
+path = "src/bench.rs"
 name = "bench"
 harness = false
