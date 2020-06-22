@@ -1,26 +1,29 @@
-use bencher::{Bencher, benchmark_main, benchmark_group};
-use rand::{thread_rng, Rng};
 use adler32::RollingAdler32;
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use humansize::{file_size_opts, FileSize};
+use rand::{thread_rng, Rng};
 
-fn bench(b: &mut Bencher, size: usize, adler: &mut RollingAdler32) {
-    let mut in_bytes = vec![0u8; size];
-    thread_rng().fill_bytes(&mut in_bytes);
+fn bench_update_buffer(c: &mut Criterion) {
+    let mut group = c.benchmark_group("update_buffer");
+    for &size in [512, 100 * 1024].iter() {
+        let mut adler = RollingAdler32::new();
+        let formatted_size = size.file_size(file_size_opts::BINARY).unwrap();
+        let in_bytes = {
+            let mut in_bytes = vec![0u8; size];
+            thread_rng().fill_bytes(&mut in_bytes);
+            in_bytes
+        };
 
-    b.iter(|| {
-        adler.update_buffer(&in_bytes);
-        bencher::black_box(adler.hash())
-    });
-    b.bytes = size as u64;
+        group.throughput(Throughput::Bytes(size as u64));
+        group.bench_with_input(
+            BenchmarkId::from_parameter(formatted_size),
+            &in_bytes,
+            |b, data| {
+                b.iter(|| adler.update_buffer(data));
+            },
+        );
+    }
 }
 
-fn bench_512b(b: &mut Bencher) {
-    bench(b, 512, &mut RollingAdler32::new())
-}
-
-fn bench_100kib(b: &mut Bencher) {
-    bench(b, 1024 * 100, &mut RollingAdler32::new())
-}
-
-benchmark_group!(bench_default, bench_512b, bench_100kib);
-
-benchmark_main!(bench_default);
+criterion_group!(bench_default, bench_update_buffer);
+criterion_main!(bench_default);
