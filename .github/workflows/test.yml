@@ -10,12 +10,20 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         rust-version: [1.33.0, stable, nightly]
+        mode: [native]
         include:
         - os: macos-latest
           rust-version: 1.33.0
+          mode: native
         - os: windows-latest
           rust-version: 1.33.0
+          mode: native
+        - os: ubuntu-latest
+          rust-version: stable
+          mode: wasm
     runs-on: ${{ matrix.os }}
+    env:
+      TARGET: ""
     steps:
     - uses: actions/checkout@v2
     - name: Set up Rust ${{ matrix.rust-version }}
@@ -23,11 +31,24 @@ jobs:
       with:
         toolchain: ${{ matrix.rust-version }}
         override: true
+    - name: Set up wasm
+      if: matrix.mode == 'wasm'
+      run: |
+        rustup target add wasm32-unknown-unknown
+        echo "::set-env name=TARGET::--target wasm32-unknown-unknown"
+        cargo install --version 0.2.63 wasm-bindgen-cli
+        cargo install --version 0.9.1 wasm-pack
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose $TARGET
     - name: Run tests
+      if: matrix.mode == 'native'
       run: cargo test --verbose
     - name: Run benchmarks
+      if: matrix.mode == 'native'
       run: cargo bench --verbose
+    - name: Run wasm tests
+      if: matrix.mode == 'wasm'
+      run: wasm-pack test --node
     - name: Build doc
+      if: matrix.mode == 'native'
       run: cargo doc
