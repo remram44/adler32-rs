@@ -25,7 +25,7 @@ std = []
 rustc-dep-of-std = ['core', 'compiler_builtins']
 
 [dev-dependencies]
-criterion = "0.3"
+criterion = "=0.3.2" # 0.3.3 broken on Rust 1.33
 humansize = "1.1"
 rand = "0.4"
 
