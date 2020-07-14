@@ -208,6 +208,8 @@ pub fn adler32<R: std::io::Read>(mut reader: R) -> std::io::Result<u32> {
 mod test {
     use rand::Rng;
     use std::io;
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test;
 
     use super::{adler32, RollingAdler32, BASE};
 
@@ -225,6 +227,7 @@ mod test {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn testvectors() {
         fn do_test(v: u32, bytes: &[u8]) {
             let mut hash = RollingAdler32::new();
@@ -254,6 +257,7 @@ mod test {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn compare() {
         let mut rng = rand::thread_rng();
         let mut data = vec![0u8; 5589];
@@ -273,6 +277,7 @@ mod test {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn rolling() {
         assert_eq!(RollingAdler32::from_value(0x01020304).hash(), 0x01020304);
 
@@ -294,6 +299,7 @@ mod test {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn long_window_remove() {
         let mut hash = RollingAdler32::new();
         let w = 65536;
