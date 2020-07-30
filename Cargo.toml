@@ -25,8 +25,8 @@ std = []
 rustc-dep-of-std = ['core', 'compiler_builtins']
 
 [dev-dependencies]
-criterion = "=0.3.2" # 0.3.3 broken on Rust 1.33
-humansize = "1.1"
+criterion = "=0.3.2" # benchmark only
+humansize = "1.1" # benchmark only
 rand = "0.7"
 getrandom = { version = "0.1", features = ["wasm-bindgen"] }
 
