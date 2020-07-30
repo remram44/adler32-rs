@@ -52,13 +52,13 @@ jobs:
     - name: Build
       run: cargo build --verbose $TARGET
     - name: Disable benchmarking dependencies
-      if: matrix.mode != 'native' || matrix.rust-version == '1.33.0'
-      run: "mv Cargo.toml Cargo.toml.bak && sed '/ # benchmark only$/d' Cargo.toml.bak >Cargo.toml"
+      if: matrix.mode != 'native' || matrix.rust-version != 'stable'
+      run: "mv Cargo.toml Cargo.toml.bak && sed '/ # benchmark only$/d' Cargo.toml.bak > Cargo.toml"
     - name: Run tests
       if: matrix.mode == 'native'
       run: cargo test --verbose
     - name: Run benchmarks
-      if: matrix.mode == 'native' && matrix.rust-version != '1.33.0'
+      if: matrix.mode == 'native' && matrix.rust-version == 'stable'
       run: cargo bench --verbose
     - name: Run wasm tests
       if: matrix.mode == 'wasm'
