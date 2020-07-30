@@ -25,6 +25,8 @@ std = []
 rustc-dep-of-std = ['core', 'compiler_builtins']
 
 [dev-dependencies]
+# The lines marked 'benchmark only' get removed on CI for platforms/versions
+# where we don't run the benchmarks (e.g. versions not supported by criterion)
 criterion = "0.3" # benchmark only
 humansize = "1.1" # benchmark only
 rand = "0.7"
