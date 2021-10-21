@@ -46,7 +46,7 @@ jobs:
       if: matrix.mode == 'wasm'
       run: |
         rustup target add wasm32-unknown-unknown
-        echo "::set-env name=TARGET::--target wasm32-unknown-unknown"
+        echo "TARGET=--target wasm32-unknown-unknown" >> $GITHUB_ENV
         cargo install --version 0.2.63 wasm-bindgen-cli
         cargo install --version 0.9.1 wasm-pack
     - name: Build
